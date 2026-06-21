@@ -1,5 +1,7 @@
 # Credit Card Portfolio Analytics Suite
 
+**🔗 [Live Demo](https://card-analytics-909492874362.us-central1.run.app)** · interactive dashboard with segmentation, default-model metrics, and portfolio KPIs.
+
 An end-to-end consumer-credit analytics suite on 30,000 real cardholders: behavioral segmentation, default-risk modeling with fair-lending validation, churn-risk flagging, and a risk-adjusted portfolio P&L — surfaced in an interactive dashboard and a strategic recommendations memo. Built to mirror the work of a consumer-banking portfolio analytics team.
 
 ## The dashboard
