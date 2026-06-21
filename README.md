@@ -2,6 +2,12 @@
 
 An end-to-end consumer-credit analytics suite on 30,000 real cardholders: behavioral segmentation, default-risk modeling with fair-lending validation, churn-risk flagging, and a risk-adjusted portfolio P&L — surfaced in an interactive dashboard and a strategic recommendations memo. Built to mirror the work of a consumer-banking portfolio analytics team.
 
+## The dashboard
+
+![Portfolio analytics dashboard](images/dashboard_screenshot.png)
+
+*Interactive version in [`dashboard.html`](dashboard.html) — open it in a browser for animated charts and the full KPI table.*
+
 ## The headline finding
 
 On raw revenue, the **Stressed / At-Risk** segment (11% of accounts) looks like a contributor at NT$583K/month. Risk-adjusted — once expected losses are netted out — it is **−NT$891K/month**, nearly cancelling the contribution of the entire rest of the portfolio. The most *active* segment is the one destroying the most value. This is why card portfolios are managed on risk-adjusted return, not revenue.
@@ -22,9 +28,13 @@ On raw revenue, the **Stressed / At-Risk** segment (11% of accounts) looks like 
 
 [Default of Credit Card Clients](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients) (Yeh & Lien, 2009), UCI ML Repository. 30,000 cardholders, Taiwan, April–September 2005. ~22% default rate (imbalanced). CC BY 4.0. Pulled directly via the `ucimlrepo` package — no manual download.
 
-## Key results
+## Segmentation
 
-**Segmentation** found four economically distinct segments, validated by a 16%–60% spread in default rates:
+K-means on standardized behavioral features (utilization, payment ratio, credit limit, delinquency, spend). Silhouette analysis selected k=4, which also proved the most business-interpretable.
+
+![Cluster selection: elbow and silhouette](images/segment_k_selection.png)
+
+The four segments are economically distinct, validated by a 16%–60% spread in default rates:
 
 | Segment | Share | Default rate | Risk-adjusted contribution |
 |---|---|---|---|
@@ -33,7 +43,13 @@ On raw revenue, the **Stressed / At-Risk** segment (11% of accounts) looks like 
 | Transactors | 38% | 16% | +NT$477K/mo |
 | Stressed / At-Risk | 11% | 60% | **−NT$891K/mo** |
 
-**Default model.** Gradient boosting reached ROC-AUC 0.78 (logistic regression 0.76), both with PR-AUC above 0.52 — more than double the 0.22 base rate. Recent and chronic delinquency dominated feature importance in both models, consistent with established credit-scoring practice.
+## Default model
+
+Two models on purpose: an interpretable logistic regression (the credit-scoring workhorse, explainable under ECOA) and a gradient-boosting challenger (higher performance, used for monitoring). Both evaluated for imbalanced data — accuracy is useless at a 22% base rate, so ROC-AUC, precision-recall, and calibration are the honest metrics.
+
+![Model evaluation: ROC, precision-recall, calibration](images/model_evaluation.png)
+
+Gradient boosting reached ROC-AUC 0.78 (logistic regression 0.76), both with PR-AUC above 0.52 — more than double the 0.22 base rate. Recent and chronic delinquency dominated feature importance in both models, consistent with established credit-scoring practice.
 
 **Fair-lending check.** Protected attributes (sex, marital status) were excluded from training; predictions were tested for disparate impact via the four-fifths rule and passed with a **0.996 ratio** (near-perfect parity by sex).
 
