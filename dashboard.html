@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Card Portfolio Analytics</title>
+<style>
+  :root {
+    --ink: #0f1b2d;
+    --slate: #3a4a5e;
+    --mist: #6b7a8d;
+    --line: #dfe4ea;
+    --paper: #f7f8fa;
+    --card: #ffffff;
+    --teal: #0f766e;
+    --teal-soft: #5e9d96;
+    --amber: #c2820a;
+    --red: #b3402e;
+    --red-soft: #d98873;
+    --blue: #2a4d8f;
+    --green: #2f7d4f;
+    --pos: #2f7d4f;
+    --neg: #b3402e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 32px 24px 64px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--mist); font-weight: 600; margin-bottom: 8px;
+  }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .sub { color: var(--slate); font-size: 14px; margin-top: 6px; max-width: 680px; }
+
+  /* KPI strip */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 18px 18px 16px;
+  }
+  .kpi .label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); font-weight: 600; }
+  .kpi .value { font-size: 26px; font-weight: 700; margin-top: 8px; letter-spacing: -0.01em; }
+  .kpi .note { font-size: 12px; color: var(--slate); margin-top: 4px; }
+  .kpi.accent-red .value { color: var(--neg); }
+  .kpi.accent-green .value { color: var(--pos); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  @media (max-width: 900px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .panel h2 {
+    font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--slate); font-weight: 700; margin-bottom: 4px;
+  }
+  .panel .desc { font-size: 12.5px; color: var(--mist); margin-bottom: 18px; }
+
+  /* horizontal bar chart */
+  .bar-item { margin-bottom: 14px; }
+  .bar-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar-head .name { font-weight: 600; color: var(--ink); }
+  .bar-head .val { color: var(--slate); font-variant-numeric: tabular-nums; }
+  .bar-track { height: 22px; background: var(--paper); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.9s cubic-bezier(.2,.7,.3,1); }
+
+  /* risk-adjusted: diverging from zero */
+  .diverge { position: relative; height: 30px; margin-bottom: 16px; }
+  .diverge .zero { position: absolute; top: -4px; bottom: -16px; width: 1px; background: var(--mist); left: 50%; }
+  .diverge .seg-label { position: absolute; top: 4px; font-size: 12.5px; font-weight: 600; }
+  .diverge .barpos, .diverge .barneg { position: absolute; top: 6px; height: 18px; border-radius: 3px; }
+  .diverge .barpos { left: 50%; background: var(--pos); }
+  .diverge .barneg { right: 50%; background: var(--neg); }
+  .diverge .amt { position: absolute; top: 5px; font-size: 12px; color: var(--slate); font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mist); font-weight: 700; }
+  td.seg { font-weight: 600; color: var(--ink); }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .pill.neg { background: #f7e2dd; color: var(--neg); }
+  .pill.pos { background: #dff0e6; color: var(--pos); }
+
+  .callout {
+    background: #fbf3ed; border: 1px solid #ecd9cb; border-left: 3px solid var(--red);
+    border-radius: 8px; padding: 16px 18px; margin-bottom: 24px;
+  }
+  .callout .tag { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); font-weight: 700; margin-bottom: 5px; }
+  .callout p { font-size: 13.5px; color: var(--slate); }
+  .callout strong { color: var(--ink); }
+
+  footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--mist); }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--slate); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Consumer &amp; Community Banking · Portfolio Analytics</div>
+    <h1>Credit Card Portfolio Analytics</h1>
+    <p class="sub">Behavioral segmentation, default risk, and risk-adjusted profitability across a 7,500-account held-out portfolio. Default probabilities are model-scored; expected loss follows PD&nbsp;×&nbsp;EAD&nbsp;×&nbsp;LGD.</p>
+  </header>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="callout">
+    <div class="tag">Key finding</div>
+    <p>On raw revenue, the <strong>Stressed / At-Risk</strong> segment looks like a contributor at <strong>NT$583K/mo</strong>. Risk-adjusted, it is <strong>−NT$891K/mo</strong> — the expected losses dwarf the revenue. The most active segment is the one destroying the most portfolio value, which is why card portfolios are managed on risk-adjusted return, not revenue.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Default Rate by Segment</h2>
+      <p class="desc">Actual default rate. The stressed segment runs ~4× the portfolio average.</p>
+      <div id="defaultBars"></div>
+    </div>
+    <div class="panel">
+      <h2>Expected Loss by Segment</h2>
+      <p class="desc">PD × EAD × LGD, summed per segment (NT$, LGD = 75%).</p>
+      <div id="lossBars"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:24px;">
+    <h2>Risk-Adjusted Monthly Contribution</h2>
+    <p class="desc">Monthly revenue minus expected loss (annualized ÷ 12). Negative = the segment destroys value after accounting for credit risk.</p>
+    <div id="divergeChart" style="margin-top:20px;"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--pos)"></span> Profitable after risk</span>
+      <span><span class="swatch" style="background:var(--neg)"></span> Value-destroying after risk</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Segment KPI Detail</h2>
+    <p class="desc">Full per-segment roll-up driving the recommendations below.</p>
+    <table id="kpiTable">
+      <thead>
+        <tr>
+          <th>Segment</th><th>Customers</th><th>Default Rate</th><th>Avg PD</th>
+          <th>Expected Loss</th><th>Monthly Rev.</th><th>Risk-Adj.</th><th>Churn Risk</th>
+        </tr>
+      </thead>
+      <tbody id="kpiBody"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    Source: UCI Default of Credit Card Clients (Yeh &amp; Lien, 2009), 30,000 accounts; metrics shown on the 7,500-account held-out test set with model-scored default probabilities. Churn proxied by account dormancy. Revenue and LGD are illustrative assumptions. Built by Dev Golakiya.
+  </footer>
+</div>
+
+<script>
+// Real numbers from the Day 4 KPI roll-up
+const SEGMENTS = [
+  { name: "Healthy Revolvers",          customers: 2969, dr: 0.19, pd: 0.19, el: 18218432, rev: 2192171, radj:  673968, churn: 0.03 },
+  { name: "High-Utilization Revolvers", customers:  843, dr: 0.17, pd: 0.17, el: 24540367, rev: 2766348, radj:  721318, churn: 0.00 },
+  { name: "Stressed / At-Risk",         customers:  849, dr: 0.60, pd: 0.62, el: 17686297, rev:  582872, radj: -890986, churn: 0.01 },
+  { name: "Transactors (pay-in-full)",  customers: 2839, dr: 0.16, pd: 0.15, el:  2269954, rev:  666613, radj:  477450, churn: 0.20 },
+];
+
+const COLORS = {
+  "Healthy Revolvers": "#2a4d8f",
+  "High-Utilization Revolvers": "#0f766e",
+  "Stressed / At-Risk": "#b3402e",
+  "Transactors (pay-in-full)": "#2f7d4f",
+};
+
+const fmtK = n => {
+  const a = Math.abs(n);
+  if (a >= 1e6) return (n/1e6).toFixed(1) + "M";
+  if (a >= 1e3) return (n/1e3).toFixed(0) + "K";
+  return n.toFixed(0);
+};
+const fmtPct = n => (n*100).toFixed(0) + "%";
+
+// KPI strip
+const totalCust = SEGMENTS.reduce((s,d)=>s+d.customers,0);
+const totalEL = SEGMENTS.reduce((s,d)=>s+d.el,0);
+const totalRev = SEGMENTS.reduce((s,d)=>s+d.rev,0);
+const totalRadj = SEGMENTS.reduce((s,d)=>s+d.radj,0);
+
+document.getElementById("kpiRow").innerHTML = `
+  <div class="kpi"><div class="label">Accounts</div><div class="value">${totalCust.toLocaleString()}</div><div class="note">held-out test portfolio</div></div>
+  <div class="kpi accent-red"><div class="label">Expected Loss</div><div class="value">NT$${fmtK(totalEL)}</div><div class="note">PD × EAD × LGD, total</div></div>
+  <div class="kpi"><div class="label">Monthly Revenue</div><div class="value">NT$${fmtK(totalRev)}</div><div class="note">interchange + interest proxy</div></div>
+  <div class="kpi accent-green"><div class="label">Risk-Adj. / mo</div><div class="value">NT$${fmtK(totalRadj)}</div><div class="note">net of expected loss</div></div>
+`;
+
+// Default rate bars
+const maxDR = Math.max(...SEGMENTS.map(d=>d.dr));
+document.getElementById("defaultBars").innerHTML = SEGMENTS.map(d=>`
+  <div class="bar-item">
+    <div class="bar-head"><span class="name">${d.name}</span><span class="val">${fmtPct(d.dr)}</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:0%;background:${COLORS[d.name]}" data-w="${(d.dr/maxDR*100).toFixed(1)}"></div></div>
+  </div>`).join("");
+
+// Expected loss bars
+const maxEL = Math.max(...SEGMENTS.map(d=>d.el));
+document.getElementById("lossBars").innerHTML = SEGMENTS.map(d=>`
+  <div class="bar-item">
+    <div class="bar-head"><span class="name">${d.name}</span><span class="val">NT$${fmtK(d.el)}</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:0%;background:${COLORS[d.name]}" data-w="${(d.el/maxEL*100).toFixed(1)}"></div></div>
+  </div>`).join("");
+
+// Diverging risk-adjusted chart
+const maxAbs = Math.max(...SEGMENTS.map(d=>Math.abs(d.radj)));
+document.getElementById("divergeChart").innerHTML = SEGMENTS.map(d=>{
+  const pctOfHalf = Math.abs(d.radj)/maxAbs*48; // up to 48% of width each side
+  const isPos = d.radj >= 0;
+  return `
+  <div class="diverge">
+    <div class="zero"></div>
+    <div class="seg-label" style="${isPos?'right:52%':'left:52%'};color:${COLORS[d.name]}">${d.name}</div>
+    <div class="${isPos?'barpos':'barneg'}" style="width:0%;background:${isPos?'var(--pos)':'var(--neg)'}" data-w="${pctOfHalf.toFixed(1)}"></div>
+    <div class="amt" style="${isPos?'left:'+(50+pctOfHalf+1)+'%':'right:'+(50+pctOfHalf+1)+'%'}">${isPos?'+':'−'}NT$${fmtK(Math.abs(d.radj))}</div>
+  </div>`;
+}).join("");
+
+// Table
+document.getElementById("kpiBody").innerHTML = SEGMENTS.map(d=>`
+  <tr>
+    <td class="seg">${d.name}</td>
+    <td>${d.customers.toLocaleString()}</td>
+    <td>${fmtPct(d.dr)}</td>
+    <td>${fmtPct(d.pd)}</td>
+    <td>NT$${fmtK(d.el)}</td>
+    <td>NT$${fmtK(d.rev)}</td>
+    <td><span class="pill ${d.radj>=0?'pos':'neg'}">${d.radj>=0?'+':'−'}NT$${fmtK(Math.abs(d.radj))}</span></td>
+    <td>${fmtPct(d.churn)}</td>
+  </tr>`).join("");
+
+// Animate bars after load
+requestAnimationFrame(()=>{
+  setTimeout(()=>{
+    document.querySelectorAll(".bar-fill, .barpos, .barneg").forEach(el=>{
+      el.style.width = el.dataset.w + "%";
+    });
+  }, 100);
+});
+</script>
+</body>
+</html>
